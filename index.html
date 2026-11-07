@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מנהרת קוונטום</title>
+<style>
+:root{--bg:#070b1a;--ink:#e8f1ff;--cy:#35e6ff;--mg:#ff3d8b;--am:#ffc43d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#070b1a}}
+:root[data-theme="dark"]{--bg:#070b1a}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:"Rubik","Heebo",system-ui,sans-serif;overflow:hidden;touch-action:none;user-select:none}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%;height:100lvh}
+#sky{position:fixed;inset:0;pointer-events:none;box-shadow:inset 0 0 110px 55px var(--bg)}
+#hud{position:fixed;z-index:3;top:-4px;left:0;right:0;display:flex;justify-content:center;padding:0 18px;line-height:1.05;font-size:18px;pointer-events:none;font-weight:600}
+#hud b{color:var(--cy);font-size:26px;font-variant-numeric:tabular-nums}
+#shield{display:none}
+#hud>div:first-child,#hud>div:last-child{display:none}
+#stat{color:var(--am);font-weight:700;font-size:clamp(14px,2.6vh,18px);margin:2px 0}
+#ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:rgba(7,11,26,.3);backdrop-filter:blur(2px)}
+h1{font-size:clamp(24px,5vh,34px);margin:0 0 4px;font-weight:800;color:var(--cy);text-shadow:0 0 24px var(--cy)}
+p{max-width:340px;line-height:1.6;margin:6px 0;opacity:.9}
+button{margin-top:8px;font:inherit;font-weight:700;font-size:clamp(16px,2.6vh,20px);padding:clamp(8px,1.6vh,12px) 44px;border:2px solid var(--cy);background:transparent;color:var(--cy);border-radius:4px;cursor:pointer}
+button:hover,button:focus-visible{background:var(--cy);color:var(--bg);outline:none}
+#ov{overflow:hidden;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 54px) 12px calc(env(safe-area-inset-bottom,0px) + 8px)}
+#set{display:grid;grid-template-columns:repeat(3,5px);gap:4px;margin:0 0 6px;padding:10px;border:0;background:transparent;cursor:pointer;flex:none}
+#box{display:flex;flex-direction:column;align-items:center;width:100%;flex:none}#abox{display:flex;flex-direction:column;align-items:center;flex:none}
+#set i{width:5px;height:5px;border-radius:50%;background:var(--ink);opacity:.85}
+#set:hover,#set:focus-visible{background:transparent}
+body:has(#ov[style*="display: flex"]) #set{display:grid}
+
+#adm{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(7,11,26,.9);padding:calc(env(safe-area-inset-top,0px) + 16px) 12px 12px;overflow:hidden;z-index:5}
+.pin{display:grid;direction:ltr;grid-template-columns:repeat(3,min(64px,9vh));gap:min(14px,1.6vh);margin:8px 0}
+.pin button{margin:0;padding:0;width:min(64px,9vh);height:min(64px,9vh);border-radius:50%;font-size:26px;border-width:1px;background:rgba(232,241,255,.12);border-color:rgba(232,241,255,.35);color:var(--ink)}
+#dots{font-size:28px;letter-spacing:8px;height:38px;color:var(--cy)}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;width:min(420px,94vw)}
+.btns{display:flex;gap:10px;align-items:center;margin-top:6px}.btns button{margin:0}
+.row{display:flex;flex-direction:column;align-items:stretch;gap:3px;margin:0;font-size:14px}
+.row input{width:100%;box-sizing:border-box;font:inherit;font-size:16px;padding:6px;background:transparent;color:var(--ink);border:1px solid var(--cy);border-radius:4px;text-align:center;direction:ltr}
+#act{display:flex;flex-direction:column;align-items:center;width:100%;padding:6px 0 calc(10px + env(safe-area-inset-bottom,0px));background:transparent}
+.bal{grid-column:1/-1;text-align:center;color:var(--am);font-size:15px}
+@media (max-height:760px){#ov p:not(#msg):not(#stat){display:none}}
+@media (max-height:480px){h1{font-size:20px}#shop{grid-template-columns:repeat(5,1fr);width:min(680px,96vw)}.up{padding:4px 2px}.bal{font-size:12px}#act{flex-direction:row;gap:10px;justify-content:center}#act button{margin-top:4px}}
+#shop{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(420px,94vw);margin:8px 0}
+.up{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;margin:0;padding:clamp(6px,1.4vh,10px) 4px;border:1px solid var(--cy);background:transparent;color:var(--ink);font:inherit;font-size:clamp(12px,2.2vh,14px);line-height:1.25;border-radius:4px;cursor:pointer}
+.up:disabled{opacity:.4;cursor:default}.up b{color:var(--am)}
+#cont{display:none;border-color:var(--am);color:var(--am);font-size:16px;padding:8px 28px}
+#cont:hover:not(:disabled),#cont:focus-visible{background:var(--am);color:var(--bg)}
+#barw{position:fixed;top:calc(env(safe-area-inset-top,0px) + 52px);left:20%;right:20%;height:10px;border:1px solid var(--mg);display:none;pointer-events:none}
+#bar{height:100%;width:100%;background:var(--mg)}
+#toast{position:fixed;top:30%;left:0;right:0;text-align:center;font-size:40px;font-weight:800;color:var(--am);text-shadow:0 0 20px var(--am);opacity:0;transition:opacity .4s;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="sky"></div>
+<div id="hud"><div>נקודות <b id="co">0</b><b id="sc" hidden></b></div><div id="lvbox" style="text-align:center"><div id="lv" style="font-size:16px">עולם 1 | שלב 1</div><div id="shield"></div></div><div>שיא <b id="bs">0</b></div></div>
+<div id="barw"><div id="bar"></div></div>
+<div id="toast"></div>
+<div id="ov"><div id="box">
+<button id="set" aria-label="הגדרות"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></button>
+<h1 id="title">מנהרת קוונטום</h1>
+<p>כל עולם הוא 100 שלבים. בשלב 100 מחכה בוס שיורה עליך. טוס, התחמק, ובקרב הבוס תירה בחזרה באופן אוטומטי.</p>
+<p>שליטה: חצים או WASD. במגע: גרור את האצבע.</p>
+<p id="msg"></p>
+<p id="stat"></p>
+<div id="shop"></div>
+<div id="act"><button id="cont"></button>
+<button id="go">התחל</button></div>
+</div></div>
+<div id="adm"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const cv=$('c');
+const R=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+R.setPixelRatio(Math.min(devicePixelRatio,2));
+const S=new THREE.Scene();S.background=new THREE.Color(0x070b1a);S.fog=new THREE.Fog(0x070b1a,30,170);
+const cam=new THREE.PerspectiveCamera(70,1,.1,300);
+function rs(){const w=cv.clientWidth||innerWidth,h=cv.clientHeight||innerHeight;R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w<h?74:70;cam.updateProjectionMatrix()}
+addEventListener('resize',rs);rs();
+S.add(new THREE.AmbientLight(0x6688cc,.8));
+const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(3,6,5);S.add(dl);
+const BX=innerWidth>innerHeight?9:7,BY=6.5;
+// worlds: background, ring A, ring B
+const PAL=[[0x070b1a,0x35e6ff,0xff3d8b],[0x120707,0xff7a3d,0xffc43d],[0x07140c,0x4dff9a,0x35e6ff],[0x0f0718,0xb24dff,0xff3d8b]];
+const ship=new THREE.Group();
+const body=new THREE.Mesh(new THREE.ConeGeometry(.6,2,4),new THREE.MeshStandardMaterial({color:0x35e6ff,emissive:0x0a6a80,flatShading:true}));
+body.rotation.x=-Math.PI/2;body.rotation.y=Math.PI/4;ship.add(body);
+const wing=new THREE.Mesh(new THREE.BoxGeometry(2.4,.08,.7),new THREE.MeshStandardMaterial({color:0xff3d8b,emissive:0x661033}));
+wing.position.z=.5;ship.add(wing);
+const flame=new THREE.Mesh(new THREE.ConeGeometry(.25,1,8),new THREE.MeshBasicMaterial({color:0xffc43d}));
+flame.rotation.x=Math.PI/2;flame.position.z=1.5;ship.add(flame);
+S.add(ship);
+const rings=[],rg=new THREE.EdgesGeometry(new THREE.BoxGeometry(BX*2+2,BY*2+2,.15));
+for(let i=0;i<24;i++){const l=new THREE.LineSegments(rg,new THREE.LineBasicMaterial({color:0x35e6ff}));l.position.z=-i*8;S.add(l);rings.push(l)}
+const gm=new THREE.LineBasicMaterial({color:0x2f6fb5});
+const ln=(x,y)=>S.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(x,y,5),new THREE.Vector3(x,y,-200)]),gm));
+for(let x=-BX;x<=BX;x+=2){ln(x,-BY-1);ln(x,BY+1)}
+for(let y=-BY;y<=BY;y+=2){ln(-BX-1,y);ln(BX+1,y)}
+const sg=new THREE.BufferGeometry(),sa=[];for(let i=0;i<500;i++)sa.push((Math.random()*2-1)*45,(Math.random()*2-1)*35+4,-Math.random()*200);
+sg.setAttribute('position',new THREE.Float32BufferAttribute(sa,3));
+const stars=new THREE.Points(sg,new THREE.PointsMaterial({color:0x9fd8ff,size:.35}));S.add(stars);
+const stars2=stars.clone();S.add(stars2);
+function applyWorld(){
+  const p=PAL[(world-1)%PAL.length];
+  S.background.setHex(p[0]);S.fog.color.setHex(p[0]);
+  rings.forEach((r,i)=>r.material.color.setHex(i%2?p[1]:p[2]));
+}
+// state
+let obs=[],orbs=[],bul=[],shots=[],boss=null,bossHp=0,bossMax=1,fireT=0,shotT=0,bossFire=0;
+let state='menu',score=0,speed=28,T=0,level=1,world=1,nextRow=-60,lives=3,inv=0,tx=0,ty=0,shake=0,orbCount=0,dist=0;
+const obsMat=[0xff3d8b,0xb24dff,0xff7a3d].map(c=>new THREE.MeshStandardMaterial({color:c,emissive:c,emissiveIntensity:.35,flatShading:true}));
+const orbMat=new THREE.MeshStandardMaterial({color:0xffc43d,emissive:0xffa000,emissiveIntensity:.8});
+const orbGeo=new THREE.IcosahedronGeometry(.6,0);
+const bulMat=new THREE.MeshBasicMaterial({color:0xff2060}),bulGeo=new THREE.SphereGeometry(.45,10,8);
+const shotMat=new THREE.MeshBasicMaterial({color:0x7dffea}),shotGeo=new THREE.BoxGeometry(.15,.15,1.6);
+function clear(){[...obs,...orbs,...bul,...shots].forEach(o=>S.remove(o.m));obs=[];orbs=[];bul=[];shots=[];if(boss){S.remove(boss.g);boss=null}$('barw').style.display='none'}
+function spawnRow(z){
+  const n=1+Math.floor(Math.random()*Math.min(3,1+Math.floor(T/60)/10));
+  for(let i=0;i<n;i++){
+    const w=1.5+Math.random()*3.5,h=1.5+Math.random()*3.5;
+    const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,2),obsMat[Math.floor(Math.random()*3)]);
+    m.position.set((Math.random()*2-1)*(BX-w/2),(Math.random()*2-1)*(BY-h/2),z);S.add(m);obs.push({m,w,h});
+  }
+  if(Math.random()<.7){const m=new THREE.Mesh(orbGeo,orbMat);m.position.set((Math.random()*2-1)*BX,(Math.random()*2-1)*BY,z-9);S.add(m);orbs.push({m})}
+}
+let best=0;try{best=+localStorage.getItem('tq_best')||0}catch(e){}
+let coins=0,up={sh:0,ag:0,fr:0,pw:0,mg:0},contCost=10;
+try{const d=JSON.parse(localStorage.getItem('tq_save'));if(d){coins=d.coins|0;Object.assign(up,d.up)}}catch(e){}
+function fmt(n){n=Number(n)||0;if(n<1e6)return String(Math.floor(n));if(n>=1e15)return n.toExponential(2);const u=['','K','M','B','T'];let i=0;while(n>=1000&&i<4){n/=1000;i++}return n.toFixed(n<10?2:n<100?1:0)+u[i]}
+const maxL=()=>3+up.sh;addEventListener('pagehide',()=>save());
+function save(){try{localStorage.setItem('tq_save',JSON.stringify({coins,up}))}catch(e){}}
+const UPS=[['sh','מגן נוסף',5],['ag','זריזות',8],['fr','קצב אש',8],['pw','עוצמת אש',8],['mg','מגנט נקודות',8]];
+function renderShop(){
+  const el=$('shop');el.innerHTML='';
+  const hd=document.createElement('div');hd.className='bal';hd.textContent='לחיצה על שדרוג קונה אותו מיד.';el.appendChild(hd);
+  UPS.forEach(([k,name,mx])=>{
+    const price=5*(up[k]+1),maxed=false;
+    const b=document.createElement('button');b.className='up';
+    b.innerHTML='<span>'+name+' (רמה '+fmt(up[k])+')</span><b>'+(maxed?'מקסימום':fmt(price)+' נקודות')+'</b>';
+    b.disabled=maxed||coins<price;
+    b.onclick=()=>{coins-=price;up[k]++;save();$('co').textContent=coins;renderShop();renderCont()};
+    el.appendChild(b);
+  });
+}
+function renderCont(){const c=$('cont');if(state!=='over'){c.style.display='none';return}c.style.display='block';c.textContent='המשך מכאן - '+contCost+' נקודות';c.disabled=coins<contCost;c.style.opacity=c.disabled?.4:1}
+function showOv(t,m,g){$('title').textContent=t;$('msg').textContent=m;$('go').textContent=g;$('ov').style.display='flex';$('co').textContent=coins;$('stat').textContent='נקודות '+fmt(coins)+'  |  שיא '+fmt(best);renderShop();renderCont();fit()}
+$('cont').onclick=()=>{if(state!=='over'||coins<contCost)return;coins-=contCost;contCost+=10;save();$('co').textContent=coins;lives=maxL();inv=2.5;[...obs,...bul,...orbs].forEach(o=>S.remove(o.m));obs=[];bul=[];orbs=[];nextRow=-60;shields();state='play';$('ov').style.display='none'};
+$('bs').textContent=best;
+function shields(){$('shield').textContent=lives>6?'\u25C6 x'+lives:'\u25C6 '.repeat(Math.max(lives,0)).trim()}
+function toast(t){const e=$('toast');e.textContent=t;e.style.opacity=1;clearTimeout(toast.h);toast.h=setTimeout(()=>e.style.opacity=0,1400)}
+function begin(w,keep){
+  clear();world=w;if(!keep)score=0;T=0;tick.m=0;level=1;speed=28;dist=0;nextRow=-60;lives=maxL();contCost=10;inv=0;tx=ty=0;orbCount=0;$('co').textContent=coins;
+  ship.position.set(0,0,0);applyWorld();state='play';$('ov').style.display='none';shields();
+  $('lv').textContent='עולם '+world+' | שלב 1';toast('עולם '+world);
+}
+$('go').onclick=()=>{if(state==='shopboss'){state='play';$('ov').style.display='none';startBoss()}else begin(state==='win'?world+1:1,state==='win')};
+function startBoss(){
+  const g=new THREE.Group();
+  const m1=new THREE.MeshStandardMaterial({color:0x6a2cff,emissive:0x2a0a80,flatShading:true});
+  g.add(new THREE.Mesh(new THREE.BoxGeometry(5,2.4,2.4),m1));
+  [-1,1].forEach(s=>{const w=new THREE.Mesh(new THREE.BoxGeometry(2.6,.5,3),m1);w.position.set(s*3.6,0,0);w.rotation.z=s*.35;g.add(w)});
+  const core=new THREE.Mesh(new THREE.SphereGeometry(.9,16,12),new THREE.MeshStandardMaterial({color:0xff2060,emissive:0xff2060,emissiveIntensity:.8}));
+  core.position.z=1.3;g.add(core);
+  g.position.set(0,0,-130);S.add(g);
+  bossMax=bossHp=40+world*20;boss={g,core,t:0};bossFire=1.5;
+  $('barw').style.display='block';toast('בוס');
+}
+const keys={};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=1});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=0);
+let lp=null;
+cv.addEventListener('pointerdown',e=>{lp=[e.clientX,e.clientY]});
+addEventListener('pointerup',()=>lp=null);
+cv.addEventListener('pointermove',e=>{if(!lp)return;tx+=(e.clientX-lp[0])*.045;ty-=(e.clientY-lp[1])*.045;lp=[e.clientX,e.clientY]});
+function over(){
+  state='over';const nb=score>best;if(nb){best=score;try{localStorage.setItem('tq_best',best)}catch(e){}}
+  $('bs').textContent=best;save();
+  showOv('התרסקת','ניקוד '+score+(nb?' - שיא חדש':'')+'. עולם '+world+', שלב '+level+'.','התחל מחדש (חינם)');
+}
+function hurt(){lives--;inv=1.6;shake=.6;shields();if(lives<=0){over();return true}return false}
+function win(){
+  state='win';score+=25*world;shake=1.2;
+  const nb=score>best;if(nb){best=score;try{localStorage.setItem('tq_best',best)}catch(e){}}
+  $('bs').textContent=best;
+  coins+=25*world;save();clear();
+  showOv('עולם '+world+' הושלם','הבוס הובס. ניקוד '+score+'. קיבלת '+25*world+' נקודות. העולם הבא מהיר וקשה יותר.','לעולם הבא');
+}
+const clock=new THREE.Clock(),V=new THREE.Vector3();
+function tick(){
+  requestAnimationFrame(tick);
+  const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+  if(state==='play'){
+    T+=dt;
+    const mn=Math.floor(T/60);if(mn!==tick.m){tick.m=mn;if(mn>0)toast('מהירות עולה')}
+    const target=Math.min(70,28+1.5*mn+(world-1)*4);
+    speed+=(target-speed)*Math.min(1,dt*.6);dist+=speed*dt;
+    const nl=Math.min(100,Math.floor(T/300)+1);
+    if(nl!==level){level=nl;coins+=5;score+=5;$('co').textContent=coins;save();$('lv').textContent='עולם '+world+' | שלב '+level;if(level<100)toast('שלב '+level);else if(!boss){clear();state='shopboss';showOv('לפני הבוס','שלב 100. קנה שדרוגים לפני הקרב.','התחל קרב בוס')}}
+    const k=18*dt*(1+.1*up.ag);
+    if(keys.arrowleft||keys.a)tx-=k;if(keys.arrowright||keys.d)tx+=k;
+    if(keys.arrowup||keys.w)ty+=k;if(keys.arrowdown||keys.s)ty-=k;
+    tx=Math.max(-BX+.8,Math.min(BX-.8,tx));ty=Math.max(-BY+.6,Math.min(BY-.6,ty));
+    const px=ship.position.x;
+    const sm=Math.min(1,(10+2*up.ag)*dt);ship.position.x+=(tx-px)*sm;ship.position.y+=(ty-ship.position.y)*sm;
+    ship.rotation.z=-(tx-px)*.25;ship.rotation.x=(ty-ship.position.y)*.2;
+    inv=Math.max(0,inv-dt);ship.visible=inv<=0||Math.floor(t*14)%2===0;
+    flame.scale.y=.8+Math.random()*.6;
+    const sp=ship.position;
+    for(const o of obs)o.m.position.z+=speed*dt;
+    for(const o of orbs){o.m.position.z+=speed*dt;o.m.rotation.y+=dt*3;o.m.rotation.x+=dt*2}
+    if(level<100){nextRow+=speed*dt;if(nextRow>-100){spawnRow(-200);nextRow-=Math.max(26,62-Math.floor(T/60)*.8)}}
+    for(const o of obs){
+      const p=o.m.position;
+      if(inv<=0&&p.z>-1.2&&p.z<2&&Math.abs(p.x-sp.x)<o.w/2+.6&&Math.abs(p.y-sp.y)<o.h/2+.45){if(hurt())break}
+    }
+    for(let i=orbs.length-1;i>=0;i--){
+      const p=orbs[i].m.position;
+      if(p.z>-2-up.mg&&p.z<2+up.mg&&V.set(sp.x,sp.y,p.z).distanceTo(p)<1.4+up.mg*1.2){
+        S.remove(orbs[i].m);orbs.splice(i,1);score++;orbCount++;coins++;$('co').textContent=coins;save();
+        if(orbCount%10===0&&lives<maxL()){lives++;shields()}
+      }
+    }
+    // boss fight
+    if(boss&&state==='play'){
+      const g=boss.g;boss.t+=dt;
+      g.position.z=Math.min(-48,g.position.z+60*dt);
+      const ph=bossHp<bossMax/2?1.6:1;
+      g.position.x=Math.sin(boss.t*.8*ph)*5;g.position.y=Math.cos(boss.t*1.1*ph)*2.4;
+      boss.core.material.emissiveIntensity=.5+.5*Math.sin(boss.t*8);
+      bossFire-=dt;
+      if(g.position.z>=-48&&bossFire<=0){
+        bossFire=bossHp<bossMax/2?.75:1.1;
+        const offs=bossHp<bossMax/2?[-.22,0,.22]:[0];
+        for(const off of offs){
+          const m=new THREE.Mesh(bulGeo,bulMat);m.position.copy(g.position);m.position.z+=2;S.add(m);
+          const d=new THREE.Vector3(sp.x-m.position.x,sp.y-m.position.y,0-m.position.z).normalize();
+          d.x+=off;d.normalize();bul.push({m,v:d.multiplyScalar(34+world*4)});
+        }
+      }
+      shotT-=dt;
+      if(shotT<=0){shotT=.2*Math.pow(.85,up.fr);const m=new THREE.Mesh(shotGeo,shotMat);m.position.set(sp.x,sp.y,-1.5);S.add(m);shots.push({m})}
+      for(let i=shots.length-1;i>=0;i--){
+        const m=shots[i].m;m.position.z-=120*dt;
+        const hit=Math.abs(m.position.z-g.position.z)<2&&Math.abs(m.position.x-g.position.x)<3.8&&Math.abs(m.position.y-g.position.y)<1.8;
+        if(hit||m.position.z<-160){S.remove(m);shots.splice(i,1);if(hit){bossHp-=1+up.pw;boss.core.scale.setScalar(1.4)}}
+      }
+      boss.core.scale.multiplyScalar(.93);if(boss.core.scale.x<1)boss.core.scale.setScalar(1);
+      for(let i=bul.length-1;i>=0;i--){
+        const b=bul[i];b.m.position.addScaledVector(b.v,dt);
+        const hit=inv<=0&&b.m.position.distanceTo(sp)<1.1;
+        if(hit||b.m.position.z>8){S.remove(b.m);bul.splice(i,1);if(hit&&hurt())break}
+      }
+      $('bar').style.width=Math.max(0,bossHp/bossMax*100)+'%';
+      if(state==='play'&&bossHp<=0)win();
+    }
+    obs=obs.filter(o=>{if(o.m.position.z>8){S.remove(o.m);return false}return true});
+    orbs=orbs.filter(o=>{if(o.m.position.z>8){S.remove(o.m);return false}return true});
+    
+  }else{
+    ship.visible=true;ship.position.y=Math.sin(t*2)*.4;ship.rotation.z=Math.sin(t)*.3;
+  }
+  const rsp=state==='play'?speed:30;
+  {const p=(stars.position.z+rsp*dt*.6)%200;stars.position.z=p;stars2.position.z=p-200}
+  for(const r of rings){r.position.z+=rsp*dt;if(r.position.z>6)r.position.z-=192}
+  shake=Math.max(0,shake-dt*1.5);
+  cam.position.set(ship.position.x*.5+(Math.random()-.5)*shake,ship.position.y*.5+1.6+(Math.random()-.5)*shake,6);
+  cam.lookAt(ship.position.x*.3,ship.position.y*.3-1.5,-20);
+  R.render(S,cam);
+}
+function fit(){const b=$('box'),o=$('ov');b.style.transform='none';const cs=getComputedStyle(o);const av=o.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);const s=Math.min(1,av/b.offsetHeight);b.style.transform=s<1?'scale('+s+')':'none'}
+function fitA(){const b=$('abox');if(!b)return;b.style.transform='none';const cs=getComputedStyle(adm);const av=adm.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);const s=Math.min(1,av/b.offsetHeight);b.style.transform=s<1?'scale('+s+')':'none'}
+const PIN='181213';let pin='';const adm=$('adm');
+function closeAdm(){adm.style.display='none'}
+function refresh(){$('co').textContent=coins;$('bs').textContent=best;showOv('מנהרת קוונטום','','התחל')}
+function pinView(){
+  pin='';
+  adm.innerHTML='<div id="abox"><div style="font-size:22px;font-weight:700">קוד גישה</div><div id="dots"></div><div id="pm" style="height:20px;color:var(--mg)"></div><div class="pin" id="pad"></div><button id="pc" style="font-size:16px;padding:6px 26px">ביטול</button></div>';
+  ['1','2','3','4','5','6','7','8','9','','0','מחק'].forEach(k=>{
+    if(!k){$('pad').appendChild(document.createElement('div'));return}
+    const b=document.createElement('button');b.textContent=k;if(k==='מחק')b.style.fontSize='14px';
+    b.onclick=()=>{
+      $('pm').textContent='';
+      if(k==='מחק')pin=pin.slice(0,-1);else if(pin.length<6)pin+=k;
+      $('dots').textContent='\u25CF'.repeat(pin.length);
+      if(pin.length===6){if(pin===PIN)panel();else{pin='';$('dots').textContent='';$('pm').textContent='קוד שגוי'}}
+    };
+    $('pad').appendChild(b);
+  });
+  $('pc').onclick=closeAdm;
+}
+function panel(){
+  const f=[['co','נקודות',coins],['bs','שיא',best],...UPS.map(([k,n])=>['u_'+k,n+' (רמה)',up[k]])];
+  adm.innerHTML='<div id="abox"><div style="font-size:22px;font-weight:700;margin-bottom:6px">הגדרות</div><div class="fg">'+f.map(([id,n,v])=>'<label class="row"><span>'+n+'</span><input type="number" min="0" inputmode="numeric" id="f_'+id+'" value="'+v+'"></label>').join('')+'</div><div class="btns"><button id="psv">שמור</button><button id="prs" style="font-size:14px;padding:6px 26px;border-color:var(--mg);color:var(--mg)">אפס הכל</button><button id="pcl" style="font-size:14px;padding:6px 26px">סגור</button></div></div>';
+  const g=id=>Math.max(0,Math.floor(+$('f_'+id).value)||0);
+  $('psv').onclick=()=>{
+    coins=g('co');best=g('bs');UPS.forEach(([k])=>{up[k]=g('u_'+k)});
+    try{localStorage.setItem('tq_best',best)}catch(e){}save();refresh();closeAdm();
+  };
+  $('prs').onclick=()=>{
+    coins=0;best=0;Object.keys(up).forEach(k=>up[k]=0);
+    try{localStorage.setItem('tq_best',0)}catch(e){}save();refresh();panel();
+  };
+  $('pcl').onclick=closeAdm;fitA();
+}
+$('set').onclick=()=>{pinView();adm.style.display='flex';fitA()};
+addEventListener('resize',()=>{if($('ov').style.display==='flex')fit();if(adm.style.display==='flex')fitA()});
+applyWorld();showOv('מנהרת קוונטום','','התחל');tick();
+</script>
+</body>
+</html>
